@@ -15,3 +15,4 @@ class EngineConfig(DefaultEngineConfig):
         self.PRETRAIN_MODEL = os.path.join(self.DIR_ROOT, 'result',
                                            self.EXP_NAME, pretrain_stage,
                                            'ema_ckpt', pretrain_ckpt)
+        # self.PRETRAIN_MODEL = 'pretrain_models/SwinB_AOTL_PRE.pth'

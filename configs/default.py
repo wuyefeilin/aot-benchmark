@@ -57,7 +57,7 @@ class DefaultEngineConfig():
         self.TRAIN_SGD_MOMENTUM = 0.9
         self.TRAIN_GPUS = 4
         self.TRAIN_BATCH_SIZE = 16
-        self.TRAIN_TBLOG = False
+        self.TRAIN_TBLOG = True
         self.TRAIN_TBLOG_STEP = 50
         self.TRAIN_LOG_STEP = 20
         self.TRAIN_IMG_LOG = True
@@ -107,7 +107,7 @@ class DefaultEngineConfig():
 
     def init_dir(self):
         self.DIR_DATA = './datasets'
-        self.DIR_DAVIS = os.path.join(self.DIR_DATA, 'DAVIS')
+        self.DIR_DAVIS = os.path.join(self.DIR_DATA, 'DAVIS/2017/trainval/')
         self.DIR_YTB = os.path.join(self.DIR_DATA, 'YTB')
         self.DIR_STATIC = os.path.join(self.DIR_DATA, 'Static')
 
