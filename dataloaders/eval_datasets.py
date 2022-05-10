@@ -134,8 +134,8 @@ class YOUTUBEVOS_Test(object):
         self.rgb = rgb
         self.transform = transform
         self.seq_list_file = os.path.join(self.db_root_dir, 'meta.json')
-        self._check_preprocess()
-        self.seqs = list(self.ann_f.keys())
+        self._check_preprocess() # 获取 meta.json内容保存在self.ann_f
+        self.seqs = list(self.ann_f.keys()) # 获取视频的名称
         self.image_root = os.path.join(root, 'JPEGImages')
         self.label_root = os.path.join(root, 'Annotations')
 
@@ -151,9 +151,10 @@ class YOUTUBEVOS_Test(object):
         for obj_n in obj_names:
             images += map(lambda x: x + '.jpg', list(data[obj_n]["frames"]))
             labels.append(data[obj_n]["frames"][0] + '.png')
-        images = np.sort(np.unique(images))
-        labels = np.sort(np.unique(labels))
+        images = np.sort(np.unique(images)) # 获取所有目标合集待预测的帧
+        labels = np.sort(np.unique(labels)) # 获取所有目标的参考帧
 
+        # 第一参考帧进行了复制，目的是为何？
         try:
             if not os.path.isfile(
                     os.path.join(self.result_root, seq_name, labels[0])):
