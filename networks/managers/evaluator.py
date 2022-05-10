@@ -275,6 +275,8 @@ class Evaluator(object):
                         ori_height = sample['meta']['height']
                         ori_width = sample['meta']['width']
                         obj_idx = sample['meta']['obj_idx']
+                        # print('*****some params********')
+                        # print(obj_nums, imgname, ori_height, ori_width, obj_idx)
 
                         obj_nums = [int(obj_num) for obj_num in obj_nums]
                         obj_idx = [int(_obj_idx) for _obj_idx in obj_idx]
@@ -324,7 +326,7 @@ class Evaluator(object):
 
                     if frame_idx > 0:
                         all_preds = torch.cat(all_preds, dim=0)
-                        pred_prob = torch.mean(all_preds, dim=0, keepdim=True)
+                        pred_prob = torch.mean(all_preds, dim=0, keepdim=True) # 对多尺度预测结果求平均值(1, 11, h, w)
                         pred_label = torch.argmax(pred_prob,
                                                   dim=1,
                                                   keepdim=True).float()
@@ -334,6 +336,7 @@ class Evaluator(object):
                             pred_label = pred_label * \
                                 keep + new_obj_label * (1 - keep)
                             new_obj_nums = [int(pred_label.max().item())]
+                            # print('new_obj_nums', new_obj_nums)
 
                             if cfg.TEST_FLIP:
                                 flip_pred_label = flip_tensor(pred_label, 3)

@@ -503,6 +503,7 @@ class AOTInferEngine(nn.Module):
         self.obj_nums = None
 
     def separate_mask(self, mask):
+        # 当目标数大于max_aot_obj_num的时候进行重新划分
         if mask is None:
             return [None] * len(self.aot_engines)
         if len(self.aot_engines) == 1:
@@ -568,15 +569,17 @@ class AOTInferEngine(nn.Module):
     def add_reference_frame(self, img, mask, obj_nums, frame_step=-1):
         if isinstance(obj_nums, list):
             obj_nums = obj_nums[0]
-        aot_num = max(np.ceil(obj_nums / self.max_aot_obj_num), 1)
+        aot_num = max(np.ceil(obj_nums / self.max_aot_obj_num), 1) # 当目标数量大于设定最大值则构建新的AOTEgnine进行预测
         while (aot_num > len(self.aot_engines)):
             new_engine = AOTEngine(self.AOT, self.gpu_id,
                                    self.long_term_mem_gap,
                                    self.short_term_mem_skip)
             new_engine.eval()
             self.aot_engines.append(new_engine)
+        # print('**********\n', img.shape, mask.shape, obj_nums, self.long_term_mem_gap, self.short_term_mem_skip)
 
         separated_masks = self.separate_mask(mask)
+        # print('**********\n', len(separated_masks), separated_masks[0].shape)
         img_embs = None
         for aot_engine, separated_mask in zip(self.aot_engines,
                                               separated_masks):
