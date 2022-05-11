@@ -11,7 +11,7 @@ import torch.distributed as dist
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from dataloaders.train_datasets import DAVIS2017_Train, YOUTUBEVOS_Train, StaticTrain, TEST
+from dataloaders.train_datasets import DAVIS2017_Train, YOUTUBEVOS_Train, StaticTrain, TEST, BL30K_Train
 import dataloaders.video_transforms as tr
 
 from utils.meters import AverageMeter
@@ -278,6 +278,17 @@ class Trainer(object):
                 max_obj_n=cfg.MODEL_MAX_OBJ_NUM)
             train_datasets.append(train_ytb_dataset)
 
+        if 'bl30k' in cfg.DATASETS:
+            train_bl30k_dataset = BL30K_Train(
+                root=cfg.DIR_BL30K,
+                transform=composed_transforms,
+                rand_reverse=cfg.DATA_RANDOM_REVERSE_SEQ,
+                seq_len=cfg.DATA_SEQ_LEN,
+                rand_gap=cfg.DATA_RANDOM_GAP_DAVIS,
+                enable_prev_frame=self.enable_prev_frame,
+                max_obj_n=cfg.MODEL_MAX_OBJ_NUM)
+            train_datasets.append(train_bl30k_dataset)
+
         if 'test' in cfg.DATASETS:
             test_dataset = TEST(transform=composed_transforms,
                                 seq_len=cfg.DATA_SEQ_LEN)
@@ -293,6 +304,14 @@ class Trainer(object):
 
         self.train_sampler = torch.utils.data.distributed.DistributedSampler(
             train_dataset)
+
+        # for x in self.train_sampler:
+        #     print(x)
+        #     result = train_dataset[x]
+        #     print(result['ref_img'].shape)
+        #     break
+        # exit()
+
         self.train_loader = DataLoader(train_dataset,
                                        batch_size=int(cfg.TRAIN_BATCH_SIZE /
                                                       cfg.TRAIN_GPUS),
@@ -301,7 +320,16 @@ class Trainer(object):
                                        pin_memory=True,
                                        sampler=self.train_sampler,
                                        drop_last=True,
-                                       prefetch_factor=4)
+                                       prefetch_factor=2)
+        # print("**********************1") 
+
+        # for frame_idx, sample in enumerate(self.train_loader):
+        #     for key, value in sample.items():
+        #         print(key, type(value))
+        #         if value is None:
+        #             raise Exception
+        #     if frame_idx > 10:
+        #         break
 
         self.print_log('Done!')
 

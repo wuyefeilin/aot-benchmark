@@ -14,6 +14,7 @@ import torchvision.transforms as TF
 import dataloaders.image_transforms as IT
 
 cv2.setNumThreads(0)
+cv2.ocl.setUseOpenCL(False)
 
 
 def _get_images(sample):
@@ -661,3 +662,48 @@ class TEST(Dataset):
         if self.transform is not None:
             sample = self.transform(sample)
         return sample
+
+class BL30K_Train(VOSTrain):
+    def __init__(self,
+                 split=['train'],
+                 root='./BL30K',
+                 transform=None,
+                 rgb=True,
+                 repeat_time=1,
+                 rand_gap=12,
+                 seq_len=5,
+                 rand_reverse=True,
+                 dynamic_merge=True,
+                 enable_prev_frame=False,
+                 max_obj_n=10,
+                 merge_prob=0):
+
+        image_root = os.path.join(root, 'JPEGImages')
+        label_root = os.path.join(root, 'Annotations')
+        seq_names = []
+        for spt in split:
+            with open(os.path.join(root, 'ImageSets', spt + '.txt')) as f:
+                seqs_tmp = f.readlines()
+            seqs_tmp = list(map(lambda elem: elem.strip(), seqs_tmp))
+            seq_names.extend(seqs_tmp)
+        imglistdic = {}
+        for seq_name in seq_names:
+            images = list(
+                np.sort(os.listdir(os.path.join(image_root, seq_name))))
+            labels = list(
+                np.sort(os.listdir(os.path.join(label_root, seq_name))))
+            imglistdic[seq_name] = (images, labels)
+
+        super(BL30K_Train, self).__init__(image_root,
+                                              label_root,
+                                              imglistdic,
+                                              transform,
+                                              rgb,
+                                              repeat_time,
+                                              rand_gap,
+                                              seq_len,
+                                              rand_reverse,
+                                              dynamic_merge,
+                                              enable_prev_frame,
+                                              merge_prob=merge_prob,
+                                              max_obj_n=max_obj_n)

@@ -68,7 +68,7 @@ class DefaultEngineConfig():
         self.TRAIN_EMA_RATIO = 0.1
         self.TRAIN_CLIP_GRAD_NORM = 5.
         self.TRAIN_SAVE_STEP = 1000
-        self.TRAIN_MAX_KEEP_CKPT = 8
+        self.TRAIN_MAX_KEEP_CKPT = 20
         self.TRAIN_RESUME = False
         self.TRAIN_RESUME_CKPT = None
         self.TRAIN_RESUME_STEP = 0
@@ -110,6 +110,7 @@ class DefaultEngineConfig():
         self.DIR_DAVIS = os.path.join(self.DIR_DATA, 'DAVIS/2017/trainval/')
         self.DIR_YTB = os.path.join(self.DIR_DATA, 'YTB')
         self.DIR_STATIC = os.path.join(self.DIR_DATA, 'Static')
+        self.DIR_BL30K = os.path.join(self.DIR_DATA, 'BLK/BL30K')
 
         self.DIR_ROOT = './results'
 
