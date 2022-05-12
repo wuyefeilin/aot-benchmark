@@ -10,7 +10,7 @@ class DefaultModelConfig():
         self.MODEL_ENCODER_DIM = [24, 32, 96, 1280]  # 4x, 8x, 16x, 16x
         self.MODEL_ENCODER_EMBEDDING_DIM = 256
         self.MODEL_DECODER_INTERMEDIATE_LSTT = True
-        self.MODEL_FREEZE_BN = True
+        self.MODEL_FREEZE_BN = False
         self.MODEL_FREEZE_BACKBONE = False
         self.MODEL_MAX_OBJ_NUM = 10
         self.MODEL_SELF_HEADS = 8
