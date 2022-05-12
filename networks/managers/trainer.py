@@ -2,6 +2,7 @@ import os
 import time
 import json
 import datetime as datetime
+import random
 
 import numpy as np
 import torch
@@ -237,6 +238,7 @@ class Trainer(object):
             tr.BalancedRandomCrop(cfg.DATA_RANDOMCROP,
                                   max_obj_num=cfg.MODEL_MAX_OBJ_NUM),
             tr.RandomHorizontalFlip(cfg.DATA_RANDOMFLIP),
+            tr.STCN(),
             tr.Resize(cfg.DATA_RANDOMCROP, use_padding=True),
             tr.ToTensor()
         ])
@@ -320,7 +322,7 @@ class Trainer(object):
                                        pin_memory=True,
                                        sampler=self.train_sampler,
                                        drop_last=True,
-                                       prefetch_factor=2)
+                                       prefetch_factor=4)
         # print("**********************1") 
 
         # for frame_idx, sample in enumerate(self.train_loader):

@@ -2,6 +2,9 @@ import random
 import cv2
 import numpy as np
 import torch
+from PIL import Image
+from torchvision import transforms
+from torchvision.transforms import InterpolationMode
 
 cv2.setNumThreads(0)
 
@@ -673,3 +676,181 @@ class MultiToTensor(object):
                     samples[idx][elem] = torch.from_numpy(tmp)
 
         return samples
+
+
+def reseed(seed):
+    random.seed(seed)
+    torch.manual_seed(seed)
+
+class STCN(object):
+    def __init__(self):
+        self.pair_im_lone_transform = transforms.Compose([
+            transforms.ColorJitter(0.01, 0.01, 0.01, 0),
+        ])
+        self.pair_im_dual_transform = transforms.Compose([
+            transforms.RandomAffine(degrees=15, shear=10, interpolation=InterpolationMode.BICUBIC, fill=(124, 116, 104)),
+        ])
+        self.pair_gt_dual_transform = transforms.Compose([
+            transforms.RandomAffine(degrees=15, shear=10, interpolation=InterpolationMode.NEAREST, fill=0),
+        ])
+
+        # These transform are the same for all pairs in the sampled sequence
+        self.all_im_lone_transform = transforms.Compose([
+            transforms.ColorJitter(0.1, 0.03, 0.03, 0),
+            transforms.RandomGrayscale(0.05),
+        ])
+
+
+    def __call__(self, sample):
+        # 1. self.all_im_lone_transform
+        # 2. self.pair_im_dual_transform
+        #    self.pair_im_lone_transform
+        #    self.pair_gt_dual_transform (seed 与2 同)
+
+        # save img before
+        # for elem in sample.keys():
+        #     if 'meta' in elem:
+        #         continue
+
+        #     tmp = sample[elem]
+    
+        #     if elem == 'curr_img' or elem == 'curr_label':
+        #         for i, tmp_ in  enumerate(tmp):
+        #             if 'label' in elem:
+        #                 tmp_ = tmp_ * (200//np.max(tmp_))
+        #                 print(tmp_)
+        #             cv2.imwrite(elem+str(i)+'_before.png', tmp_)
+        #     else:
+        #         if 'label' in elem:
+        #             tmp = tmp * (200//np.max(tmp))
+        #         cv2.imwrite(elem+'_before.png', tmp)
+
+        # 转换成Image格式
+        for elem in sample.keys():
+            if 'meta' in elem:
+                continue
+
+            tmp = sample[elem]
+    
+            if elem == 'curr_img' or elem == 'curr_label':
+                new_tmp = []
+                for tmp_ in  tmp:
+                    tmp_ = tmp_.astype('uint8')
+                    tmp_ = Image.fromarray(tmp_)
+                    new_tmp.append(tmp_)
+                tmp = new_tmp
+            else:
+                tmp = tmp.astype('uint8')
+                tmp = Image.fromarray(tmp)
+            sample[elem] = tmp
+        
+            
+
+        # self.all_im_lone_transform
+        sequence_seed = np.random.randint(2147483647)
+        for elem in sample.keys():
+            if 'meta' in elem or 'label' in elem:
+                continue
+            tmp = sample[elem]
+            if elem == 'curr_img':
+                new_tmp = []
+                for tmp_ in  tmp:
+                    reseed(sequence_seed)
+                    tmp_ = self.all_im_lone_transform(tmp_)
+                    new_tmp.append(tmp_)
+                tmp = new_tmp
+            else:
+                reseed(sequence_seed)
+                tmp = self.all_im_lone_transform(tmp)
+            sample[elem] = tmp
+
+        # self.pair_im_dual_transform
+        for elem in sample.keys():
+            if 'meta' in elem or 'label' in elem:
+                continue
+            if elem == 'curr_img':
+                imgs = sample[elem]
+                labels = sample['curr_label']
+                new_imgs = []
+                new_labels = []
+                for img, label in zip(imgs, labels):
+                    pairwise_seed = np.random.randint(2147483647)
+                    reseed(pairwise_seed)
+                    img = self.pair_im_dual_transform(img)
+                    img = self.pair_im_lone_transform(img)
+                    reseed(pairwise_seed)
+                    label = self.pair_gt_dual_transform(label)
+                    new_imgs.append(img)
+                    new_labels.append(label)
+                sample['curr_img'] = new_imgs
+                sample['curr_label'] = new_labels
+            elif elem == 'ref_img':
+                img = sample[elem]
+                label = sample['ref_label']
+                pairwise_seed = np.random.randint(2147483647)
+                reseed(pairwise_seed)
+                img = self.pair_im_dual_transform(img)
+                img = self.pair_im_lone_transform(img)
+                reseed(pairwise_seed)
+                label = self.pair_gt_dual_transform(label)
+                sample['ref_img'] = img
+                sample['ref_label'] = label
+            else:
+                img = sample['prev_img']
+                label = sample['prev_label']
+                pairwise_seed = np.random.randint(2147483647)
+                reseed(pairwise_seed)
+                img = self.pair_im_dual_transform(img)
+                img = self.pair_im_lone_transform(img)
+                reseed(pairwise_seed)
+                label = self.pair_gt_dual_transform(label)
+                sample['prev_img'] = img
+                sample['prev_label'] = label
+
+        # 转换成array形式
+        for elem in sample.keys():
+            if 'meta' in elem:
+                continue
+
+            tmp = sample[elem]
+    
+            if elem == 'curr_img' or elem == 'curr_label':
+                new_tmp = []
+                for tmp_ in  tmp:
+                    tmp_ = np.array(tmp_)
+                    if 'img' in elem:
+                        tmp_ = tmp_.astype('float32')
+                    new_tmp.append(tmp_)
+                tmp = new_tmp
+            else:
+                tmp = np.array(tmp)
+                if 'img' in elem:
+                    tmp = tmp.astype('float32')
+            sample[elem] = tmp
+
+        # save img
+        # for elem in sample.keys():
+        #     if 'meta' in elem:
+        #         continue
+
+        #     tmp = sample[elem]
+    
+        #     if elem == 'curr_img' or elem == 'curr_label':
+        #         for i, tmp_ in  enumerate(tmp):
+        #             if 'label' in elem:
+        #                 tmp_ = tmp_ * (200//np.max(tmp_))
+        #             cv2.imwrite(elem+str(i)+'.png', tmp_)
+        #     else:
+        #         if 'label' in elem:
+        #             tmp = tmp * (200//np.max(tmp))
+        #         cv2.imwrite(elem+'.png', tmp)
+
+        return sample
+
+
+
+
+
+
+
+
