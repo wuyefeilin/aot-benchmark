@@ -77,7 +77,8 @@ class Evaluator(object):
             self.print_log('Load latest checkpoint from {}'.format(
                 cfg.TEST_CKPT_PATH))
         else:
-            self.ckpt = 'unknown'
+            # self.ckpt = 'unknown'
+            self.ckpt = os.path.splitext(os.path.basename(cfg.TEST_CKPT_PATH))[0]
             self.model, removed_dict = load_network(self.model,
                                                     cfg.TEST_CKPT_PATH,
                                                     self.gpu)
