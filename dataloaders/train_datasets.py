@@ -233,8 +233,7 @@ class StaticTrain(Dataset):
 
 class VOSTrain(Dataset):
     def __init__(self,
-                 image_root,
-                 label_root,
+                 seq_root,
                  imglistdic,
                  transform=None,
                  rgb=True,
@@ -246,8 +245,9 @@ class VOSTrain(Dataset):
                  enable_prev_frame=False,
                  merge_prob=0.3,
                  max_obj_n=10):
-        self.image_root = image_root
-        self.label_root = label_root
+        # self.image_root = image_root
+        # self.label_root = label_root
+        self.seq_root = seq_root
         self.rand_gap = rand_gap
         self.seq_len = seq_len
         self.rand_reverse = rand_reverse
@@ -283,7 +283,7 @@ class VOSTrain(Dataset):
             if ref_index in bad_indices:
                 continue
             ref_label = Image.open(
-                os.path.join(self.label_root, seqname, lablist[ref_index]))
+                os.path.join(self.seq_root[seqname][1], seqname, lablist[ref_index]))
             ref_label = np.array(ref_label, dtype=np.uint8)
             ref_objs = list(np.unique(ref_label))
             is_consistent = True
@@ -313,7 +313,7 @@ class VOSTrain(Dataset):
             if ref_index in bad_indices:
                 continue
             ref_label = Image.open(
-                os.path.join(self.label_root, seqname, lablist[ref_index]))
+                os.path.join(self.seq_root[seqname][1], seqname, lablist[ref_index]))
             ref_label = np.array(ref_label, dtype=np.uint8)
             xs, ys = np.nonzero(ref_label)
             if len(xs) > min_fg_pixels:
@@ -371,14 +371,14 @@ class VOSTrain(Dataset):
 
     def get_image_label(self, seqname, imagelist, lablist, index):
         image = cv2.imread(
-            os.path.join(self.image_root, seqname, imagelist[index]))
+            os.path.join(self.seq_root[seqname][0], seqname, imagelist[index]))
         image = np.array(image, dtype=np.float32)
 
         if self.rgb:
             image = image[:, :, [2, 1, 0]]
 
         label = Image.open(
-            os.path.join(self.label_root, seqname, lablist[index]))
+            os.path.join(self.seq_root[seqname][1], seqname, lablist[index]))
         label = np.array(label, dtype=np.uint8)
 
         return image, label
@@ -577,14 +577,15 @@ class YOUTUBEVOS_Train(VOSTrain):
                  enable_prev_frame=False,
                  max_obj_n=10,
                  merge_prob=0.3):
-        root = os.path.join(root, str(year), 'train')
-        image_root = os.path.join(root, 'JPEGImages')
-        label_root = os.path.join(root, 'Annotations')
-        self.seq_list_file = os.path.join(root, 'meta.json')
+        root_ = os.path.join(root, str(year), 'train')
+        image_root = os.path.join(root_, 'JPEGImages')
+        label_root = os.path.join(root_, 'Annotations')
+        self.seq_list_file = os.path.join(root_, 'meta.json')
         self._check_preprocess()
         seq_names = list(self.ann_f.keys())
 
         imglistdic = {}
+        seq_root = {}
         for seq_name in seq_names:
             data = self.ann_f[seq_name]['objects']
             obj_names = list(data.keys())
@@ -604,9 +605,68 @@ class YOUTUBEVOS_Train(VOSTrain):
                 print("Short video: " + seq_name)
                 continue
             imglistdic[seq_name] = (images, labels)
+            seq_root[seq_name] = (image_root, label_root)
 
-        super(YOUTUBEVOS_Train, self).__init__(image_root,
-                                               label_root,
+        # valid
+        root_ = os.path.join(root, str(year), 'train/predict_valid')
+        image_root = os.path.join(root_, 'JPEGImages')
+        label_root = os.path.join(root_, 'Annotations')
+        self.seq_list_file = os.path.join(root_, 'meta.json')
+        self._check_preprocess()
+        seq_names = list(self.ann_f.keys())
+
+        for seq_name in seq_names:
+            data = self.ann_f[seq_name]['objects']
+            obj_names = list(data.keys())
+            images = []
+            labels = []
+            for obj_n in obj_names:
+                if len(data[obj_n]["frames"]) < 2:
+                    print("Short object: " + seq_name + '-' + obj_n)
+                    continue
+                images += list(
+                    map(lambda x: x + '.jpg', list(data[obj_n]["frames"])))
+                labels += list(
+                    map(lambda x: x + '.png', list(data[obj_n]["frames"])))
+            images = np.sort(np.unique(images))
+            labels = np.sort(np.unique(labels))
+            if len(images) < 2:
+                print("Short video: " + seq_name)
+                continue
+            imglistdic[seq_name] = (images, labels)
+            seq_root[seq_name] = (image_root, label_root)
+
+        # test
+        root_ = os.path.join(root, str(year), 'train/predict_test')
+        image_root = os.path.join(root_, 'JPEGImages')
+        label_root = os.path.join(root_, 'Annotations')
+        self.seq_list_file = os.path.join(root_, 'meta.json')
+        self._check_preprocess()
+        seq_names = list(self.ann_f.keys())
+
+        for seq_name in seq_names:
+            data = self.ann_f[seq_name]['objects']
+            obj_names = list(data.keys())
+            images = []
+            labels = []
+            for obj_n in obj_names:
+                if len(data[obj_n]["frames"]) < 2:
+                    print("Short object: " + seq_name + '-' + obj_n)
+                    continue
+                images += list(
+                    map(lambda x: x + '.jpg', list(data[obj_n]["frames"])))
+                labels += list(
+                    map(lambda x: x + '.png', list(data[obj_n]["frames"])))
+            images = np.sort(np.unique(images))
+            labels = np.sort(np.unique(labels))
+            if len(images) < 2:
+                print("Short video: " + seq_name)
+                continue
+            imglistdic[seq_name] = (images, labels)
+            seq_root[seq_name] = (image_root, label_root)
+        
+
+        super(YOUTUBEVOS_Train, self).__init__(seq_root,
                                                imglistdic,
                                                transform,
                                                rgb,
