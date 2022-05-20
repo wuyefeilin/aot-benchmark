@@ -235,10 +235,10 @@ class Trainer(object):
         composed_transforms = transforms.Compose([
             tr.RandomScale(cfg.DATA_MIN_SCALE_FACTOR,
                            cfg.DATA_MAX_SCALE_FACTOR, cfg.DATA_SHORT_EDGE_LEN),
+            tr.STCN(),
             tr.BalancedRandomCrop(cfg.DATA_RANDOMCROP,
                                   max_obj_num=cfg.MODEL_MAX_OBJ_NUM),
             tr.RandomHorizontalFlip(cfg.DATA_RANDOMFLIP),
-            tr.STCN(),
             tr.Resize(cfg.DATA_RANDOMCROP, use_padding=True),
             tr.ToTensor()
         ])
