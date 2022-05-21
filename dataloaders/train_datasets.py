@@ -16,6 +16,41 @@ import dataloaders.image_transforms as IT
 cv2.setNumThreads(0)
 cv2.ocl.setUseOpenCL(False)
 
+bad_valid = set(['2e129b0b09', 'b5514f75d8',
+'f99dae3620',
+'54ad024bb3',
+'fdd821595c',
+'0e8a6b63bb',
+'f6ed698261'])
+
+bad_test = set([
+'f35029f76d',
+'f3f3c201bd',
+'dd0e8ec389',
+'b5afa0484c',
+'de5291a04b',
+'14dc31fcf5',
+'0d4be43f47',
+'12d307c850',
+'25bcf222fb',
+'eeb04477a5',
+'326ec349d9',
+'ef8737ca22',
+'91ee8300e7',
+'c15ae32d78',
+'96e0330b01',
+'46b30af3eb',
+'2ac506c1a4',
+'02b1a46f42',
+'a2ff86b7ee',
+'ba0f1b4f02',
+'bca23d0068',
+'ee34a6c680',
+'90a74612e2',
+'ffc412741c',
+'efbedf7b07',
+'ead608392b'])
+
 
 def _get_images(sample):
     return [sample['ref_img'], sample['prev_img']] + sample['curr_img']
@@ -616,6 +651,8 @@ class YOUTUBEVOS_Train(VOSTrain):
         seq_names = list(self.ann_f.keys())
 
         for seq_name in seq_names:
+            if seq_name in bad_valid:
+                continue
             data = self.ann_f[seq_name]['objects']
             obj_names = list(data.keys())
             images = []
@@ -645,6 +682,8 @@ class YOUTUBEVOS_Train(VOSTrain):
         seq_names = list(self.ann_f.keys())
 
         for seq_name in seq_names:
+            if seq_name in bad_test:
+                continue
             data = self.ann_f[seq_name]['objects']
             obj_names = list(data.keys())
             images = []
